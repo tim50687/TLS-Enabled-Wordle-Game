@@ -6,84 +6,11 @@
 #include <string.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+#include "cJSON.h"
+#include "client.h"
 
-#define NON_TLS_PORT "27993"
-#define TLS_PORT "27994"
 #define SERVER_HOSTNAME "proj1.3700.network"
-
-/*
- * This function is used to display an error message provided in the 'message'
- * parameter using the perror function. It then terminates the program
- * with an exit status of 1 (indicating an error condition).
- */
-void error(const char *message)
-{
-    perror(message);
-    exit(1);
-}
-
-/*
- * Check command-line arguments and set port number, server name, and user
- */
-void check_input(int argc, char *argv[], char **port_number, char **name_of_server, char **user)
-{
-    if (argc < 3 || argc > 5)
-    {
-        fprintf(stderr, "Usage: ./client <-p port> <-s> <hostname> <Northeastern-username>\n");
-        exit(1);
-    }
-
-    // Only handle 4 possible inputs, Hopefully it's Ok
-    if (argc == 3)
-    {
-        *port_number = NON_TLS_PORT;
-    }
-    else if (argc == 4)
-    {
-        *port_number = TLS_PORT;
-    }
-    else if (argc == 5)
-    {
-        *port_number = argv[2];
-    }
-    else
-    {
-        fprintf(stderr, "Usage: ./client <-p port> <-s> <hostname> <Northeastern-username>\n");
-        exit(1);
-    }
-
-    // Get the name_of_server and user
-    *name_of_server = argv[argc - 2];
-    *user = argv[argc - 1];
-
-    // Print out the result
-    printf("Port number: %s\n", *port_number);
-    printf("Name of the server: %s\n", *name_of_server);
-    printf("User name: %s\n", *user);
-}
-
-/*
- * This function prints information from the given addrinfo structure.
- */
-void print_addrinfo(struct addrinfo *address_info)
-{
-    printf("Family: %d\n", address_info->ai_family);
-    printf("Socket Type: %d\n", address_info->ai_socktype);
-    printf("IP address: ");
-    char ip_str[1024];
-    if (address_info->ai_family == AF_INET)
-    {
-        struct sockaddr_in *ipv4 = (struct sockaddr_in *)address_info->ai_addr;
-        inet_ntop(AF_INET, &(ipv4->sin_addr), ip_str, sizeof(ip_str));
-    }
-    else
-    {
-        struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)address_info->ai_addr;
-        inet_ntop(AF_INET6, &(ipv6->sin6_addr), ip_str, sizeof(ip_str));
-    }
-    printf("%s\n", ip_str);
-    printf("Port: %d\n", ntohs(((struct sockaddr_in *)address_info->ai_addr)->sin_port));
-}
 
 int main(int argc, char *argv[])
 {
@@ -91,6 +18,13 @@ int main(int argc, char *argv[])
     char *port_number = NULL;
     char *name_of_server = NULL;
     char *user = NULL;
+
+    // socket file descriptor
+    int sockfd;
+
+    // buffer to store data
+    char *buffer;
+    buffer = (char *)malloc(262144); // Allocate memory for the buffer
 
     // First, check user's command line input
     check_input(argc, argv, &port_number, &name_of_server, &user);
@@ -115,6 +49,83 @@ int main(int argc, char *argv[])
         print_addrinfo(server_info);
     }
 
-    freeaddrinfo(server_info);
+    // Get the socket file descriptor
+    if ((sockfd = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol)) == -1)
+    {
+        error("Client: socket");
+    }
+
+    // Connect to port
+    if (connect(sockfd, server_info->ai_addr, server_info->ai_addrlen) == -1)
+    {
+        close(sockfd);
+        error("client: connect");
+    }
+
+    freeaddrinfo(server_info); // all done with server info after connection
+
+    // Send Hello message
+    char hello_msg[1024];
+    int hello_len = 0;
+    sprintf(hello_msg, "{\"type\": \"hello\", \"northeastern_username\": \"%s\"}\n", user);
+    hello_len = strlen(hello_msg);
+
+    if (send(sockfd, hello_msg, hello_len, 0) == -1)
+    {
+        error("Client said hello:");
+    }
+
+    // Receive Message from hello
+    int num_bytes;
+    if ((num_bytes = recv(sockfd, buffer, 4096, 0)) == -1)
+    {
+        error("Client said hello, received from server: ");
+    }
+    buffer[num_bytes] = '\0';
+    printf("Client received %s", buffer);
+
+    // Store the game ID
+    char game_id[1024];
+    get_message_from_json(game_id, buffer, "id");
+    printf("game_id: %s\n", game_id);
+
+    // Start guessing
+    // Guess from given word list
+    FILE *file = fopen("word_list.txt", "r");
+    if (file == NULL)
+    {
+        error("Error opening file");
+    }
+    // Get the word
+    char word[16];
+    while (fgets(word, sizeof(word), file) != NULL)
+    {
+        int guess_len = 0;
+        char guess[1024];
+        word[strlen(word) - 1] = '\0';
+        sprintf(guess, "{\"type\": \"guess\", \"id\": \"%s\", \"word\": \"%s\"}\n", game_id, word);
+        guess_len = strlen(guess);
+
+        if (send(sockfd, guess, guess_len, 0) == -1)
+        {
+            error("Client guessed:");
+        }
+
+        // Receive Message after guessing
+        memset(buffer, 0, 262144);
+        if ((num_bytes = recv(sockfd, buffer, 4096, 0)) == -1)
+        {
+            error("Client guessed, received from server: ");
+        }
+        buffer[num_bytes] = '\0';
+        // printf("Client received the result from guess %s\n", buffer);
+        // Get the result
+        char result[1024];
+        get_message_from_json(result, buffer, "type");
+        printf("result: %s\n", result);
+    }
+
+    fclose(file); // Close the file when done
+    free(buffer);
     return 0;
 }

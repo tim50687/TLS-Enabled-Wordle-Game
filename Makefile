@@ -6,7 +6,7 @@ CFLAGS = -Wall -g
 TARGET = client
 
 # Source File and Object Files
-SRCS = client.c
+SRCS = client.c cJSON.c client_utils.c
 OBJS = $(SRCS:.c=.o) # Turn every .c file in source to .o
 
 all: $(TARGET)
