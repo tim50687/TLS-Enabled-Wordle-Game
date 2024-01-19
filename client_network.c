@@ -1,3 +1,19 @@
+/**
+ * Implementation of network communication functions for the client application of the 3700.network project.
+ *
+ * This file contains the implementation of functions responsible for setting up network connections,
+ * handling communication with the server, and managing the initial "hello" message protocol.
+ * It utilizes standard networking libraries in C for socket programming and handles the transmission
+ * and reception of data over the network.
+ *
+ * Functions:
+ * - setup_connection: Establishes a connection to the server.
+ * - send_hello_message: Sends a greeting message to the server and receives a response.
+ *
+ * Usage of these functions requires proper handling of resources, such as socket file descriptors,
+ * and ensuring that network communication adheres to the protocol defined by the server.
+ */
+
 #include "client.h"
 #include <sys/socket.h>
 #include <netdb.h>
@@ -6,6 +22,19 @@
 #include <string.h>
 #include <unistd.h>
 
+/**
+ * Sends a "hello" message to the server and receives the response.
+ * This function constructs a JSON-formatted hello message, sends it to the server,
+ * and then waits to receive a response from the server. The response is stored in the provided buffer.
+ *
+ * @param sockfd The socket file descriptor for communicating with the server.
+ * @param user The username to be included in the hello message.
+ * @param buffer A buffer to store the response received from the server.
+ *
+ * Note: The buffer should be pre-allocated before calling this function. The function
+ * will fill this buffer with the server's response. It's the caller's responsibility
+ * to manage (allocate and free) this buffer.
+ */
 void send_hello_message(int sockfd, const char *user, char *buffer)
 {
     char hello_msg[1024];
@@ -28,17 +57,30 @@ void send_hello_message(int sockfd, const char *user, char *buffer)
     printf("Client received %s", buffer);
 }
 
+/**
+ * Sets up a connection to the server using the specified hostname and port number.
+ * This function resolves the server's address and port, creates a socket, and establishes
+ * a connection to the server. It updates the provided socket file descriptor.
+ *
+ * @param hostname The server's hostname or IP address to connect to.
+ * @param port_number The port number on the server to connect to.
+ * @param sockfd A pointer to an int that will store the socket file descriptor.
+ *
+ * Note: This function is responsible for resolving the server address and establishing
+ * a connection. It's the caller's responsibility to close the socket file descriptor
+ * when the connection is no longer needed.
+ */
 void setup_connection(const char *hostname, const char *port_number, int *sockfd)
 {
     // Get the address information
     struct addrinfo hints;
     struct addrinfo *server_info;
 
-    memset(&hints, 0, sizeof(hints)); // set all bytes to 0
+    memset(&hints, 0, sizeof(hints)); // Set all bytes to 0
     // Provide preference
-    hints.ai_family = AF_UNSPEC;     // allow both IPv4, IPv6
-    hints.ai_socktype = SOCK_STREAM; // use TCP
-    hints.ai_flags = AI_PASSIVE;     // usually used for server applications, if NULL is provided in 'node' paramter, getaddrinfo will automatically fill in IP
+    hints.ai_family = AF_UNSPEC;     // Allow both IPv4, IPv6
+    hints.ai_socktype = SOCK_STREAM; // Use TCP
+    hints.ai_flags = AI_PASSIVE;     // Usually used for server applications, if NULL is provided in 'node' paramter, getaddrinfo will automatically fill in IP
 
     if ((getaddrinfo(hostname, port_number, &hints, &server_info)) < 0)
     {
@@ -46,7 +88,7 @@ void setup_connection(const char *hostname, const char *port_number, int *sockfd
     }
     else
     {
-        // print out some useful information to verify getaddrinfo
+        // Print out some useful information to verify getaddrinfo
         print_addrinfo(server_info);
     }
 
@@ -63,5 +105,5 @@ void setup_connection(const char *hostname, const char *port_number, int *sockfd
         error("client: connect");
     }
 
-    freeaddrinfo(server_info); // all done with server info after connection
+    freeaddrinfo(server_info); // All done with server info after connection
 }
