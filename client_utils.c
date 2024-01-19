@@ -59,11 +59,6 @@ void check_input(int argc, char *argv[], char **port_number, char **name_of_serv
     // Get the name_of_server and user
     *name_of_server = argv[argc - 2];
     *user = argv[argc - 1];
-
-    // Print out the result
-    printf("Port number: %s\n", *port_number);
-    printf("Name of the server: %s\n", *name_of_server);
-    printf("User name: %s\n", *user);
 }
 
 /*

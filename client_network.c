@@ -54,7 +54,6 @@ void send_hello_message(int sockfd, const char *user, char *buffer)
         error("Client said hello, received from server: ");
     }
     buffer[num_bytes] = '\0';
-    printf("Client received %s", buffer);
 }
 
 /**
@@ -86,11 +85,11 @@ void setup_connection(const char *hostname, const char *port_number, int *sockfd
     {
         error("getaddrinfo error");
     }
-    else
-    {
-        // Print out some useful information to verify getaddrinfo
-        print_addrinfo(server_info);
-    }
+    // else
+    // {
+    //     // Print out some useful information to verify getaddrinfo
+    //     // print_addrinfo(server_info);
+    // }
 
     // Get the socket file descriptor
     if ((*sockfd = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol)) == -1)
