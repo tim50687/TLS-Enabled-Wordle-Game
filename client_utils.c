@@ -1,4 +1,3 @@
-#include "client.h"
 #include <sys/socket.h>
 #include <netdb.h>
 #include <stdlib.h>

@@ -65,24 +65,26 @@ int main(int argc, char *argv[])
     freeaddrinfo(server_info); // all done with server info after connection
 
     // Send Hello message
-    char hello_msg[1024];
-    int hello_len = 0;
-    sprintf(hello_msg, "{\"type\": \"hello\", \"northeastern_username\": \"%s\"}\n", user);
-    hello_len = strlen(hello_msg);
+    send_hello_message(sockfd, user, buffer);
 
-    if (send(sockfd, hello_msg, hello_len, 0) == -1)
-    {
-        error("Client said hello:");
-    }
+    // char hello_msg[1024];
+    // int hello_len = 0;
+    // sprintf(hello_msg, "{\"type\": \"hello\", \"northeastern_username\": \"%s\"}\n", user);
+    // hello_len = strlen(hello_msg);
 
-    // Receive Message from hello
-    int num_bytes;
-    if ((num_bytes = recv(sockfd, buffer, 4096, 0)) == -1)
-    {
-        error("Client said hello, received from server: ");
-    }
-    buffer[num_bytes] = '\0';
-    printf("Client received %s", buffer);
+    // if (send(sockfd, hello_msg, hello_len, 0) == -1)
+    // {
+    //     error("Client said hello:");
+    // }
+
+    // // Receive Message from hello
+    // int num_bytes;
+    // if ((num_bytes = recv(sockfd, buffer, 4096, 0)) == -1)
+    // {
+    //     error("Client said hello, received from server: ");
+    // }
+    // buffer[num_bytes] = '\0';
+    // printf("Client received %s", buffer);
 
     // Store the game ID
     char game_id[1024];
@@ -98,6 +100,7 @@ int main(int argc, char *argv[])
     }
     // Get the word
     char word[16];
+    int num_bytes;
     while (fgets(word, sizeof(word), file) != NULL)
     {
         int guess_len = 0;
