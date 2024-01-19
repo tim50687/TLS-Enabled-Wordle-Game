@@ -1,3 +1,4 @@
+#include "client.h"
 #include <sys/socket.h>
 #include <netdb.h>
 #include <stdlib.h>
@@ -6,9 +7,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include "cJSON.h"
-
-#define NON_TLS_PORT "27993"
-#define TLS_PORT "27994"
 
 /*
  * This function is used to display an error message provided in the 'message'
