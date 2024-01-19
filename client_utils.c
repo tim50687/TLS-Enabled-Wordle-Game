@@ -1,3 +1,10 @@
+/**
+ * Source file for the client application of the 3700.network project.
+ *
+ * This file contains the implementation of functions for
+ * command-line argument processing, error handling, and JSON message parsing.
+ */
+
 #include "client.h"
 #include <sys/socket.h>
 #include <netdb.h>
@@ -82,9 +89,24 @@ void print_addrinfo(struct addrinfo *address_info)
     printf("Port: %d\n", ntohs(((struct sockaddr_in *)address_info->ai_addr)->sin_port));
 }
 
+/**
+ * Extracts a specific message from a JSON string based on the provided key.
+ *
+ * This function parses a JSON string and retrieves the value associated with
+ * the specified key. The value is then copied to the 'message' parameter.
+ *
+ * @param message A buffer where the extracted message will be stored.
+ * @param message_json The JSON string to parse.
+ * @param key The key for which the value is to be extracted from the JSON string.
+ *
+ * Note:
+ * - The 'message' buffer should be large enough to hold the extracted value.
+ * - If the key is not found or the corresponding value is not a string, no action is taken.
+ * - In case of a JSON parsing error, an error message is printed to the standard output.
+ */
 void get_message_from_json(char *message, char *message_json, char *key)
 {
-    cJSON *json = cJSON_Parse(message_json); // use library deal with JSON
+    cJSON *json = cJSON_Parse(message_json); // Use library deal with JSON
     if (json == NULL)
     {
         const char *error_ptr = cJSON_GetErrorPtr();
@@ -95,13 +117,13 @@ void get_message_from_json(char *message, char *message_json, char *key)
         cJSON_Delete(json);
         return;
     }
-    // access the JSON data
+    // Access the JSON data
     cJSON *target_message = cJSON_GetObjectItemCaseSensitive(json, key);
     if (cJSON_IsString(target_message) && (target_message->valuestring != NULL))
     {
-        // copy to target message to message
+        // Copy to target message to message
         strcpy(message, target_message->valuestring);
     }
-    // delete the JSON object
+    // Delete the JSON object
     cJSON_Delete(json);
 }
