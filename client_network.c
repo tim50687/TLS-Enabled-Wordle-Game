@@ -106,3 +106,51 @@ void setup_connection(const char *hostname, const char *port_number, int *sockfd
 
     freeaddrinfo(server_info); // All done with server info after connection
 }
+
+void init_ssl()
+{
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+}
+
+SSL_CTX *create_ssl_context()
+{
+    const SSL_METHOD *method = TLS_client_method();
+    SSL_CTX *ctx = SSL_CTX_new(method);
+
+    if (!ctx)
+    {
+        perror("Unable to create SSL context");
+        ERR_print_errors_fp(stderr);
+        exit(1);
+    }
+
+    return ctx;
+}
+
+SSL *create_ssl_object(SSL_CTX *ctx, int sockfd)
+{
+    SSL *ssl = SSL_new(ctx);
+    if (!ssl)
+    {
+        perror("Unable to create SSL object");
+        ERR_print_errors_fp(stderr);
+        exit(1);
+    }
+
+    // set the socket for SSL
+    SSL_set_fd(ssl, sockfd);
+
+    return ssl;
+}
+
+// Function to perform SSL handshake
+void perform_ssl_handshake(SSL *ssl)
+{
+    if (SSL_connect(ssl) != 1)
+    {
+        perror("SSL handshake failed");
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+}
