@@ -30,29 +30,48 @@
  * @param sockfd The socket file descriptor for communicating with the server.
  * @param user The username to be included in the hello message.
  * @param buffer A buffer to store the response received from the server.
+ * @param ssl The SSL structure for TLS communication (can be NULL for non-TLS).
+ * @param use_tls A flag indicating whether to use TLS (1 for TLS, 0 for non-TLS).
  *
  * Note: The buffer should be pre-allocated before calling this function. The function
  * will fill this buffer with the server's response. It's the caller's responsibility
  * to manage (allocate and free) this buffer.
  */
-void send_hello_message(int sockfd, const char *user, char *buffer)
+void send_hello_message(int sockfd, const char *user, char *buffer, SSL *ssl, int use_tls)
 {
     char hello_msg[1024];
     int hello_len = 0;
     sprintf(hello_msg, "{\"type\": \"hello\", \"northeastern_username\": \"%s\"}\n", user);
     hello_len = strlen(hello_msg);
 
-    if (send(sockfd, hello_msg, hello_len, 0) == -1)
+    int num_bytes;
+
+    if (use_tls) // TLS handshake
     {
-        error("Client said hello:");
+        if (SSL_write(ssl, hello_msg, hello_len) < 0)
+        {
+            error("Client said hello:");
+        }
+        // Receive Message from hello
+        if ((num_bytes = SSL_read(ssl, buffer, 1024)) == -1)
+        {
+            error("Client said hello, received from server: ");
+        }
+    }
+    else // Normal connection
+    {
+        if (send(sockfd, hello_msg, hello_len, 0) == -1)
+        {
+            error("Client said hello:");
+        }
+
+        // Receive Message from hello
+        if ((num_bytes = recv(sockfd, buffer, 1024, 0)) == -1)
+        {
+            error("Client said hello, received from server: ");
+        }
     }
 
-    // Receive Message from hello
-    int num_bytes;
-    if ((num_bytes = recv(sockfd, buffer, 4096, 0)) == -1)
-    {
-        error("Client said hello, received from server: ");
-    }
     buffer[num_bytes] = '\0';
 }
 
@@ -88,7 +107,7 @@ void setup_connection(const char *hostname, const char *port_number, int *sockfd
     // else
     // {
     //     // Print out some useful information to verify getaddrinfo
-    //     // print_addrinfo(server_info);
+    //     print_addrinfo(server_info);
     // }
 
     // Get the socket file descriptor

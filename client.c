@@ -32,6 +32,11 @@ int main(int argc, char *argv[])
     // Socket file descriptor
     int sockfd = 0;
 
+    // For TSL handshake
+    SSL_CTX *ctx = NULL;
+    SSL *ssl = NULL;
+    int use_tls = 0;
+
     // Buffer to store message from server, in order to get game_id
     char *buffer;
     buffer = (char *)malloc(1024); // Allocate memory for the buffer
@@ -42,17 +47,44 @@ int main(int argc, char *argv[])
     // Get address information of server and get the socket file descriptor
     setup_connection(SERVER_HOSTNAME, port_number, &sockfd);
 
+    // Check if port number is 27994 -> TSL handshake
+    if (strcmp(port_number, "27994") == 0)
+    {
+        init_ssl();
+        // Create and configure SSL context
+        SSL_CTX *ctx = create_ssl_context();
+        // Create and configure SSL object
+        SSL *ssl = create_ssl_object(ctx, sockfd);
+        // Perform SSL handshake
+        perform_ssl_handshake(ssl);
+
+        use_tls = 1;
+
+        printf("TSL handshake set up successfully\n");
+    }
+
     // Send Hello message
-    send_hello_message(sockfd, user, buffer); // Now buffer will contain id
+    send_hello_message(sockfd, user, buffer, ssl, use_tls); // Now buffer will contain id
 
     // Store the game ID
     char game_id[1024];
     get_message_from_json(game_id, buffer, "id");
 
     // Play game
-    play_game(sockfd, game_id);
+    play_game(sockfd, game_id, ssl, use_tls);
 
+    // Shutdown and cleanup
+    SSL_shutdown(ssl);
+    SSL_free(ssl);
+    SSL_CTX_free(ctx);
     close(sockfd);
+
+    // Cleanup OpenSSL
+    EVP_cleanup();
+    ERR_free_strings();
+
+    // free the allocated buffer
     free(buffer);
+
     return 0;
 }

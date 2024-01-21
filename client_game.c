@@ -142,10 +142,12 @@ void cleanup_game_resources(char **buffer, char **hint, SimpleSet *garbage_alpha
 
 /**
  * Plays the guessing game by sending guesses to the server and processing responses.
- * @param sockfd The socket file descriptor for communicating with the server.
+ * @param sockfd The socket file descriptor for non-TLS communication.
+ * @param ssl The SSL structure for TLS communication (can be NULL for non-TLS).
  * @param game_id The game ID for the current session.
+ * @param use_tls A flag indicating whether to use TLS (1 for TLS, 0 for non-TLS).
  */
-void play_game(int sockfd, const char *game_id)
+void play_game(int sockfd, const char *game_id, SSL *ssl, int use_tls)
 {
     // Guess from given word list
     FILE *file = fopen("word_list.txt", "r");
@@ -186,17 +188,38 @@ void play_game(int sockfd, const char *game_id)
         sprintf(guess, "{\"type\": \"guess\", \"id\": \"%s\", \"word\": \"%s\"}\n", game_id, word);
         guess_len = strlen(guess);
 
-        if (send(sockfd, guess, guess_len, 0) == -1)
+        if (use_tls) // TLS handshake
         {
-            error("Client guessed:");
+            if (SSL_write(ssl, guess, guess_len) < 0)
+            {
+
+                error("Client guess:");
+            }
+            // Receive message after guessing
+            memset(buffer, 0, 262144);
+            int num_bytes = SSL_read(ssl, buffer, 262144);
+            if (num_bytes < 0)
+            {
+
+                error("Cllient guessed, received from server ");
+            }
+        }
+        else // Normal connection
+        {
+
+            if (send(sockfd, guess, guess_len, 0) == -1)
+            {
+                error("Client guessed:");
+            }
+
+            // Receive Message after guessing
+            memset(buffer, 0, 262144);
+            if ((num_bytes = recv(sockfd, buffer, 262144, 0)) == -1)
+            {
+                error("Client guessed, received from server: ");
+            }
         }
 
-        // Receive Message after guessing
-        memset(buffer, 0, 262144);
-        if ((num_bytes = recv(sockfd, buffer, 4096, 0)) == -1)
-        {
-            error("Client guessed, received from server: ");
-        }
         buffer[num_bytes] = '\0';
 
         // If guess the correct answer
