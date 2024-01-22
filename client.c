@@ -59,8 +59,6 @@ int main(int argc, char *argv[])
         perform_ssl_handshake(ssl);
 
         use_tls = 1;
-
-        printf("TSL handshake set up successfully\n");
     }
 
     // Send Hello message
@@ -83,7 +81,7 @@ int main(int argc, char *argv[])
     EVP_cleanup();
     ERR_free_strings();
 
-    // free the allocated buffer
+    // Free the allocated buffer
     free(buffer);
 
     return 0;
