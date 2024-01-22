@@ -31,11 +31,13 @@ void check_input(int argc, char *argv[], char **port_number, char **name_of_serv
 void print_addrinfo(struct addrinfo *address_info);
 void get_message_from_json(char *message, char *message_json, char *key);
 void setup_connection(const char *hostname, const char *port, int *sockfd);
-void send_hello_message(int sockfd, const char *user, char *buffer);
-void play_game(int sockfd, const char *game_id);
+void send_hello_message(int sockfd, const char *user, char *buffer, SSL *ssl, int use_tls);
+void play_game(int sockfd, const char *game_id, SSL *ssl, int use_tls);
 
 // TSL handshake
+void init_ssl();
 SSL_CTX *create_ssl_context();
-void configure_ssl_context(SSL_CTX *ctx);
+SSL *create_ssl_object(SSL_CTX *ctx, int sockfd);
+void perform_ssl_handshake(SSL *ssl);
 
 #endif // CLIENT_H

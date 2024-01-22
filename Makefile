@@ -1,6 +1,9 @@
 # Compiler and Compiler Flags
 CC = cc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g -I/opt/homebrew/opt/openssl@3/include
+
+# Linker Flags
+LDFLAGS = -L/opt/homebrew/opt/openssl@3/lib -lssl -lcrypto
 
 # Target Executable
 TARGET = client
@@ -12,7 +15,7 @@ OBJS = $(SRCS:.c=.o) # Turn every .c file in source to .o
 all: $(TARGET)
 
 client: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET) 
+	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
 # Remove the Executable and Object Files
 clean: 

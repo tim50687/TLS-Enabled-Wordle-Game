@@ -229,7 +229,9 @@ void play_game(int sockfd, const char *game_id, SSL *ssl, int use_tls)
         get_message_from_json(correct_message, buffer, "type");
         if (strcmp(correct_message, "bye") == 0)
         {
-            printf("Client received the result from guess %s\n", buffer);
+            char ans[64];
+            get_message_from_json(ans, buffer, "flag");
+            printf("%s\n", ans);
             break;
         }
 
