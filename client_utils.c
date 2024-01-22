@@ -29,7 +29,7 @@ void error(const char *message)
 /*
  * Check command-line arguments and set port number, server name, and user
  */
-void check_input(int argc, char *argv[], char **port_number, char **name_of_server, char **user)
+void check_input(int argc, char *argv[], char **port_number, char **name_of_server, char **user, int *use_tls)
 {
     if (argc < 3 || argc > 5)
     {
@@ -45,10 +45,20 @@ void check_input(int argc, char *argv[], char **port_number, char **name_of_serv
     else if (argc == 4)
     {
         *port_number = TLS_PORT;
+        *use_tls = 1;
     }
     else if (argc == 5)
     {
         *port_number = argv[2];
+        if (strcmp(*port_number, "27994") == 0)
+        {
+            *use_tls = 1;
+        }
+    }
+    else if (argc == 6)
+    {
+        *port_number = argv[2];
+        *use_tls = 1;
     }
     else
     {

@@ -27,7 +27,7 @@
 #define TLS_PORT "27994"
 
 void error(const char *message);
-void check_input(int argc, char *argv[], char **port_number, char **name_of_server, char **user);
+void check_input(int argc, char *argv[], char **port_number, char **name_of_server, char **user, int *use_tls);
 void print_addrinfo(struct addrinfo *address_info);
 void get_message_from_json(char *message, char *message_json, char *key);
 void setup_connection(const char *hostname, const char *port, int *sockfd);

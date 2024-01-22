@@ -42,10 +42,10 @@ int main(int argc, char *argv[])
     buffer = (char *)malloc(1024); // Allocate memory for the buffer
 
     // First, check user's command line input
-    check_input(argc, argv, &port_number, &name_of_server, &user);
+    check_input(argc, argv, &port_number, &name_of_server, &user, &use_tls);
 
     // Get address information of server and get the socket file descriptor
-    setup_connection(SERVER_HOSTNAME, port_number, &sockfd);
+    setup_connection(name_of_server, port_number, &sockfd);
 
     // Check if port number is 27994 -> TSL handshake
     if (strcmp(port_number, "27994") == 0)
@@ -57,8 +57,6 @@ int main(int argc, char *argv[])
         ssl = create_ssl_object(ctx, sockfd);
         // Perform SSL handshake
         perform_ssl_handshake(ssl);
-
-        use_tls = 1;
     }
 
     // Send Hello message
@@ -71,16 +69,17 @@ int main(int argc, char *argv[])
     // Play game
     play_game(sockfd, game_id, ssl, use_tls);
 
-    // Shutdown and cleanup
-    SSL_shutdown(ssl);
-    SSL_free(ssl);
-    SSL_CTX_free(ctx);
-    close(sockfd);
-
     // Cleanup OpenSSL
-    EVP_cleanup();
-    ERR_free_strings();
+    if (use_tls)
+    {
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+        SSL_CTX_free(ctx);
+        EVP_cleanup();
+        ERR_free_strings();
+    }
 
+    close(sockfd);
     // Free the allocated buffer
     free(buffer);
 
