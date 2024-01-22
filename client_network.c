@@ -43,8 +43,8 @@ void send_hello_message(int sockfd, const char *user, char *buffer, SSL *ssl, in
     int hello_len = 0;
     sprintf(hello_msg, "{\"type\": \"hello\", \"northeastern_username\": \"%s\"}\n", user);
     hello_len = strlen(hello_msg);
-
-    int num_bytes;
+    int result = 0;
+    int num_bytes = 0;
 
     if (use_tls) // TLS handshake
     {
@@ -53,9 +53,13 @@ void send_hello_message(int sockfd, const char *user, char *buffer, SSL *ssl, in
             error("Client said hello:");
         }
         // Receive Message from hello
-        if ((num_bytes = SSL_read(ssl, buffer, 1024)) == -1)
+        if ((result = SSL_read(ssl, buffer, 1024)) == -1)
         {
             error("Client said hello, received from server: ");
+        }
+        else
+        {
+            num_bytes = strlen(buffer);
         }
     }
     else // Normal connection
@@ -166,7 +170,7 @@ SSL *create_ssl_object(SSL_CTX *ctx, int sockfd)
 // Function to perform SSL handshake
 void perform_ssl_handshake(SSL *ssl)
 {
-    if (SSL_connect(ssl) != 1)
+    if (SSL_connect(ssl) < 0)
     {
         perror("SSL handshake failed");
         ERR_print_errors_fp(stderr);

@@ -197,11 +197,14 @@ void play_game(int sockfd, const char *game_id, SSL *ssl, int use_tls)
             }
             // Receive message after guessing
             memset(buffer, 0, 262144);
-            int num_bytes = SSL_read(ssl, buffer, 262144);
-            if (num_bytes < 0)
+            int result = SSL_read(ssl, buffer, 262144);
+            if (result < 0)
             {
-
                 error("Cllient guessed, received from server ");
+            }
+            else
+            {
+                num_bytes = strlen(buffer);
             }
         }
         else // Normal connection

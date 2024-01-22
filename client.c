@@ -52,9 +52,9 @@ int main(int argc, char *argv[])
     {
         init_ssl();
         // Create and configure SSL context
-        SSL_CTX *ctx = create_ssl_context();
+        ctx = create_ssl_context();
         // Create and configure SSL object
-        SSL *ssl = create_ssl_object(ctx, sockfd);
+        ssl = create_ssl_object(ctx, sockfd);
         // Perform SSL handshake
         perform_ssl_handshake(ssl);
 
