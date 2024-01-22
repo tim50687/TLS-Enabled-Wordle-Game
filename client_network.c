@@ -1,17 +1,20 @@
 /**
- * Implementation of network communication functions for the client application of the 3700.network project.
+ * Network Communication Functions for 3700.network Project - Client Application with TLS Support
  *
- * This file contains the implementation of functions responsible for setting up network connections,
- * handling communication with the server, and managing the initial "hello" message protocol.
- * It utilizes standard networking libraries in C for socket programming and handles the transmission
- * and reception of data over the network.
+ * This file provides the implementation for network-related functions used in the client application
+ * of the 3700.network project, including support for TLS (Transport Layer Security). Key functionalities
+ * encompass establishing network connections with and without TLS encryption, managing data exchange
+ * with the server, and implementing the initial communication protocol, including the "hello" message exchange.
  *
- * Functions:
- * - setup_connection: Establishes a connection to the server.
- * - send_hello_message: Sends a greeting message to the server and receives a response.
+ * The functions utilize standard C libraries for socket programming along with OpenSSL for TLS encryption,
+ * handling both sending and receiving data over network sockets in a secure manner. These functions are
+ * essential in ensuring that the client application communicates effectively with the server, adhering to
+ * the specified protocol, and maintaining data security through encrypted connections.
  *
- * Usage of these functions requires proper handling of resources, such as socket file descriptors,
- * and ensuring that network communication adheres to the protocol defined by the server.
+ * Proper resource management and adherence to the server-defined protocol are crucial for successful
+ * communication. This includes careful handling of socket descriptors and SSL contexts, particularly
+ * in TLS-enabled exchanges. The implementation aims to provide a robust framework for secure and
+ * reliable network communication within the project's client-server architecture.
  */
 
 #include "client.h"
@@ -130,12 +133,28 @@ void setup_connection(const char *hostname, const char *port_number, int *sockfd
     freeaddrinfo(server_info); // All done with server info after connection
 }
 
+/**
+ * Initializes the SSL library.
+ *
+ * This function loads all error strings and algorithms used by SSL. It is a prerequisite
+ * before starting any SSL operations in the program. It should be called once during the
+ * initialization phase of the application.
+ */
 void init_ssl()
 {
     SSL_load_error_strings();
     OpenSSL_add_all_algorithms();
 }
 
+/**
+ * Creates and returns a new SSL context.
+ *
+ * This function sets up a new SSL context using the specified SSL method for a client.
+ * It is essential for establishing TLS/SSL enabled connections.
+ *
+ * @return SSL_CTX* A pointer to the created SSL_CTX structure. On failure, the program
+ *         will print an error message and exit.
+ */
 SSL_CTX *create_ssl_context()
 {
     const SSL_METHOD *method = TLS_client_method();
@@ -151,6 +170,17 @@ SSL_CTX *create_ssl_context()
     return ctx;
 }
 
+/**
+ * Creates a new SSL object for a given SSL context.
+ *
+ * This function initializes a new SSL structure for a TLS/SSL connection.
+ * The SSL structure is then bound to a socket file descriptor for communication.
+ *
+ * @param ctx The SSL context to be used for creating the SSL structure.
+ * @param sockfd The socket file descriptor to be used for the SSL connection.
+ * @return SSL* A pointer to the created SSL structure. On failure, the program
+ *         will print an error message and exit.
+ */
 SSL *create_ssl_object(SSL_CTX *ctx, int sockfd)
 {
     SSL *ssl = SSL_new(ctx);
@@ -167,7 +197,15 @@ SSL *create_ssl_object(SSL_CTX *ctx, int sockfd)
     return ssl;
 }
 
-// Function to perform SSL handshake
+/**
+ * Performs an SSL handshake to establish a secure connection.
+ *
+ * This function initiates the SSL/TLS handshake process with a server. The handshake
+ * negotiates SSL parameters and, if successful, establishes a secure connection.
+ *
+ * @param ssl The SSL structure associated with the connection.
+ * Note: The function will terminate the program with an error message if the handshake fails.
+ */
 void perform_ssl_handshake(SSL *ssl)
 {
     if (SSL_connect(ssl) < 0)
